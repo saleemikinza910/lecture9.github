@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VistaPrime · 16 Estates + Advanced Features</title>
+  <!-- Bootstrap 5 + Icons + Fonts -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Leaflet for map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    :root {
+      --primary: #0F3B3A;
+      --accent: #D4AF37;
+      --secondary: #F8F5F0;
+      --surface: #FFFFFF;
+      --text-dark: #1F2A2A;
+      --border-light: #e0dbd0;
+      --shadow: 0 8px 20px rgba(0,0,0,0.04);
+    }
+    body {
+      background: var(--secondary);
+      color: var(--text-dark);
+      transition: background 0.3s, color 0.2s;
+    }
+    body.dark-mode {
+      --secondary: #121a1a;
+      --surface: #1e2b2b;
+      --text-dark: #e6edea;
+      --border-light: #2e403e;
+      background: #0d1414;
+    }
+    .navbar { background-color: var(--primary) !important; padding: 1rem 0; }
+    .navbar-brand, .nav-link { color: white !important; font-weight: 500; }
+    .nav-link:hover { color: var(--accent) !important; }
+    .btn-accent { background: var(--accent); border: none; color: var(--primary); font-weight: 600; }
+    .btn-accent:hover { background: #b6901f; color: white; transform: translateY(-2px); }
+    .btn-outline-accent { border: 2px solid var(--accent); color: var(--accent); background: transparent; }
+    .btn-outline-accent:hover { background: var(--accent); color: var(--primary); }
+    .hero {
+      background: linear-gradient(135deg, #0F3B3A 0%, #1e5553 100%);
+      color: white; border-radius: 0 0 3rem 3rem; padding: 3rem 0; margin-bottom: 2rem;
+    }
+    .section-title {
+      font-weight: 700; display: inline-block; margin-bottom: 2rem; position: relative;
+    }
+    .section-title::after {
+      content: ''; position: absolute; bottom: -10px; left: 0; width: 60%; height: 4px;
+      background: var(--accent); border-radius: 4px;
+    }
+    .property-card {
+      background: var(--surface); border-radius: 1.8rem; overflow: hidden;
+      border: 1px solid var(--border-light); box-shadow: var(--shadow); height: 100%;
+      transition: all 0.25s; cursor: pointer;
+    }
+    .property-card:hover { transform: translateY(-8px); box-shadow: 0 24px 30px -12px rgba(0,0,0,0.12); }
+    .property-img { height: 180px; object-fit: cover; background: #bdc3b0; }
+    .badge-marla { background: var(--primary); color: white; font-weight: 500; padding: 0.2rem 0.8rem; border-radius: 20px; }
+    .filter-card, .payment-card, .compare-table-container, .wishlist-panel, .portfolio-stats, .contact-card, .recent-card, .map-card {
+      background: var(--surface); border-radius: 1.5rem; padding: 1.5rem;
+      border: 1px solid var(--border-light); box-shadow: var(--shadow);
+    }
+    .wishlist-item {
+      background: var(--secondary); border-left: 8px solid var(--accent);
+      border-radius: 1rem; padding: 0.9rem 1.5rem; margin-bottom: 0.8rem;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .footer { background: var(--primary); color: white; margin-top: 4rem; }
+    .comparison-bar { background: var(--surface); border-radius: 3rem; padding: 1rem 1.8rem; }
+    .login-btn { background: transparent; border: 1px solid white; color: white; border-radius: 30px; padding: 0.4rem 1.2rem; }
+    .login-btn:hover { background: white; color: var(--primary); }
+    .user-badge { background: var(--accent); color: var(--primary); border-radius: 30px; padding: 0.3rem 1rem; font-weight: 600; }
+    .recent-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding: 8px 0; }
+    .price-slider { width: 100%; margin: 10px 0; }
+    .agent-avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; background: var(--accent); }
+    #map { height: 400px; border-radius: 1rem; z-index: 1; }
+  </style>
+</head>
+<body>
+
+<!-- Login Modal -->
+<div class="modal fade" id="loginModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background: var(--surface); border-radius: 2rem;">
+      <div class="modal-header border-0">
+        <h4 class="modal-title fw-bold"><i class="bi bi-person-circle me-2" style="color:var(--accent);"></i>Welcome to VistaPrime</h4>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="nav nav-pills mb-4 justify-content-center" id="loginTab" role="tablist">
+          <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#login">Login</button></li>
+          <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#signup">Sign Up</button></li>
+        </ul>
+        <div class="tab-content">
+          <div class="tab-pane fade show active" id="login">
+            <div class="mb-3"><label>Email</label><input type="email" id="loginEmail" class="form-control" placeholder="demo@vistaprime.com"></div>
+            <div class="mb-3"><label>Password</label><input type="password" id="loginPassword" class="form-control" placeholder="••••••••"></div>
+            <button id="loginSubmit" class="btn btn-accent w-100">Log in</button>
+            <p class="small text-muted mt-2">Demo: demo@vistaprime.com / demo123</p>
+          </div>
+          <div class="tab-pane fade" id="signup">
+            <div class="mb-3"><label>Full name</label><input type="text" id="signupName" class="form-control" placeholder="John Doe"></div>
+            <div class="mb-3"><label>Email</label><input type="email" id="signupEmail" class="form-control" placeholder="john@example.com"></div>
+            <div class="mb-3"><label>Password</label><input type="password" id="signupPassword" class="form-control"></div>
+            <button id="signupSubmit" class="btn btn-accent w-100">Create account</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Property Details Modal -->
+<div class="modal fade" id="propertyModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="background: var(--surface); border-radius: 2rem;">
+      <div class="modal-header border-0">
+        <h4 class="modal-title fw-bold" id="modalTitle"></h4>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- dynamic content -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mortgage Pre-approval Modal (FIXED) -->
+<div class="modal fade" id="preapprovalModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background: var(--surface); border-radius: 2rem;">
+      <div class="modal-header">
+        <h5 class="modal-title">Mortgage Pre‑approval</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label>Annual income ($)</label>
+        <input type="number" id="incomeInput" class="form-control mb-3" placeholder="e.g., 120000" value="80000">
+        <label>Monthly debts ($)</label>
+        <input type="number" id="debtInput" class="form-control mb-3" placeholder="e.g., 500" value="300">
+        <label>Down payment ($)</label>
+        <input type="number" id="downPaymentInput" class="form-control mb-3" placeholder="e.g., 60000" value="40000">
+        <button id="calcPreapprovalBtn" class="btn btn-accent w-100">Calculate Max Price</button>
+        <div id="preapprovalResult" class="mt-3 alert alert-info" style="display: none;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="#"><i class="bi bi-building me-2"></i>VistaPrime</a>
+    <button class="navbar-toggler bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto align-items-center">
+        <li class="nav-item"><a class="nav-link" href="#home">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="#properties">Properties</a></li>
+        <li class="nav-item"><a class="nav-link" href="#payment">Payment</a></li>
+        <li class="nav-item"><a class="nav-link" href="#portfolio">Portfolio</a></li>
+        <li class="nav-item"><a class="nav-link" href="#wishlist">Wishlist</a></li>
+        <li class="nav-item"><a class="nav-link" href="#map-section">Map</a></li>
+        <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+        <li class="nav-item ms-2" id="userArea"></li>
+        <li class="nav-item ms-2">
+          <button id="darkModeToggle" class="btn btn-outline-light rounded-pill px-3">
+            <i class="bi bi-moon-stars"></i> <span class="d-none d-sm-inline">Dark</span>
+          </button>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section id="home" class="hero">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-7">
+        <h1 class="display-4 fw-bold">Find Your <span style="color: var(--accent);">Perfect Home</span></h1>
+        <p class="lead my-3">16 prime estates · Filter by city, price, marla · Sort & compare</p>
+        <a href="#properties" class="btn btn-accent btn-lg px-5"><i class="bi bi-grid-3x3 me-2"></i>Browse listings</a>
+        <button id="preapprovalHeroBtn" class="btn btn-outline-light btn-lg ms-2"><i class="bi bi-calculator"></i> Pre‑approval</button>
+      </div>
+      <div class="col-lg-5 d-none d-lg-block">
+        <img src="https://images.pexels.com/photos/280229/pexels-photo-280229.jpeg?auto=compress&cs=tinysrgb&w=500" alt="Modern home" class="img-fluid rounded-4 shadow">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Filter + Payment + Rent vs Buy -->
+<section class="container mb-4">
+  <div class="row g-4">
+    <div class="col-md-7">
+      <div class="filter-card">
+        <h5><i class="bi bi-funnel-fill me-2" style="color: var(--accent);"></i>Filter Properties</h5>
+        <div class="row g-3 mt-2">
+          <div class="col-md-4"><label>City</label><select id="cityFilter" class="form-select"><option value="all">All Cities</option></select></div>
+          <div class="col-md-4"><label>Marla</label><select id="marlaFilter" class="form-select"><option value="all">Any</option><option value="5 Marla">5 Marla</option><option value="10 Marla">10 Marla</option><option value="20 Marla">20 Marla</option><option value="1 Kanal">1 Kanal</option></select></div>
+          <div class="col-md-4"><label>Sort by</label><select id="sortSelect" class="form-select"><option value="default">Default</option><option value="price_asc">Price: Low to High</option><option value="price_desc">Price: High to Low</option><option value="name_asc">Name: A to Z</option></select></div>
+          <div class="col-12"><label>Max Price: $<span id="priceValue">5000000</span></label><input type="range" id="priceRange" class="price-slider" min="0" max="5000000" step="50000" value="5000000"></div>
+          <div class="col-12"><button id="clearFiltersBtn" class="btn btn-outline-secondary">Clear Filters</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-5">
+      <div class="payment-card">
+        <h5><i class="bi bi-calculator-fill me-2" style="color: var(--accent);"></i>Payment Estimator</h5>
+        <div class="row g-2 mt-2">
+          <div class="col-6"><label>Price</label><input type="number" id="calcPrice" class="form-control" value="500000"></div>
+          <div class="col-6"><label>Down %</label><input type="number" id="calcDown" class="form-control" value="20"></div>
+          <div class="col-6"><label>Term (years)</label><select id="calcTerm" class="form-select"><option value="1">1</option><option value="3">3</option><option value="5" selected>5</option><option value="10">10</option><option value="15">15</option></select></div>
+          <div class="col-6"><label>Tax & Insurance (%)</label><input type="number" id="calcTaxInsurance" class="form-control" value="1.2" step="0.1"></div>
+          <div class="col-12"><button id="calcBtn" class="btn btn-accent w-100">Calculate</button></div>
+          <div class="col-12 mt-3">
+            <div class="bg-light p-3 rounded-3">💰 Monthly: <strong id="monthlyResult">$0</strong><br><small>5% interest + tax/ins</small></div>
+            <div id="amortizationTable" class="mt-3 small" style="max-height: 200px; overflow-y: auto; display: none;"></div>
+          </div>
+        </div>
+        <!-- Rent vs Buy section -->
+        <hr class="mt-3">
+        <h6><i class="bi bi-arrow-left-right"></i> Rent vs. Buy</h6>
+        <div class="row g-2 mt-2">
+          <div class="col-8"><label>Monthly rent ($)</label><input type="number" id="rentAmount" class="form-control" placeholder="e.g., 2500"></div>
+          <div class="col-4 d-flex align-items-end"><button id="rentVsBuyBtn" class="btn btn-outline-accent w-100">Compare</button></div>
+          <div class="col-12"><div id="rentVsBuyResult" class="alert alert-secondary mt-2 mb-0 small"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Property Grid (16 cards) -->
+<section id="properties" class="container my-4">
+  <div class="d-flex justify-content-between"><h2 class="section-title h1"><i class="bi bi-house-heart me-2" style="color: var(--accent);"></i>16 Premium Estates</h2><span class="badge-gold px-4 py-2" style="background: var(--accent);"><span id="visibleCount">16</span> homes</span></div>
+  <div class="comparison-bar d-flex justify-content-between mb-4"><div><i class="bi bi-arrow-left-right"></i> Compare up to 3 <span id="compareCounter">0</span></div><div><button id="compareBtn" class="btn btn-outline-accent btn-sm">Compare</button><button id="clearCompareBtn" class="btn btn-outline-secondary btn-sm ms-2">Clear</button></div></div>
+  <div id="propertyGrid" class="row g-4"></div>
+  <div id="compareTableWrapper" class="compare-table-container mt-5" style="display: none;">
+    <h4>Comparison</h4><table class="table"><thead><tr><th>Property</th><th>Location</th><th>Marla</th><th>Price</th><th>Monthly*</th></tr></thead><tbody id="compareTableBody"></tbody></table>
+  </div>
+</section>
+
+<!-- Interactive Map Section -->
+<section id="map-section" class="container my-5">
+  <h2 class="section-title"><i class="bi bi-map-fill me-2" style="color:var(--accent);"></i>Explore on Map</h2>
+  <div class="map-card">
+    <div id="map"></div>
+    <div class="mt-3 d-flex justify-content-between align-items-center">
+      <button id="findNearbyBtn" class="btn btn-accent"><i class="bi bi-geo-alt"></i> Find nearest property</button>
+      <span id="nearbyResult" class="text-muted"></span>
+    </div>
+  </div>
+</section>
+
+<!-- Payment Plans -->
+<section id="payment" class="container my-5"><h2 class="section-title">Flexible Plans</h2><div class="row g-4"><div class="col-md-4"><div class="payment-card text-center"><i class="bi bi-cash-stack fs-1"></i><h5>Half Payment</h5><p>50% now, rest 6 months interest‑free.</p></div></div><div class="col-md-4"><div class="payment-card text-center"><i class="bi bi-bank fs-1"></i><h5>Bank Loan</h5><p>Up to 80% finance · 15 years max.</p></div></div><div class="col-md-4"><div class="payment-card text-center"><i class="bi bi-calendar-check fs-1"></i><h5>6‑Month Installment</h5><p>Equal payments, zero markup.</p></div></div></div></section>
+
+<!-- Portfolio History -->
+<section id="portfolio" class="container my-5"><h2 class="section-title">Portfolio History</h2><div class="portfolio-stats"><div class="row text-center"><div class="col-md-4"><div class="p-3"><i class="bi bi-building fs-1"></i><h3 id="totalOwned">0</h3><p>Total</p></div></div><div class="col-md-4"><div class="p-3"><i class="bi bi-cash-coin fs-1"></i><h3 id="totalSold">0</h3><p>Sold</p></div></div><div class="col-md-4"><div class="p-3"><i class="bi bi-house-check fs-1"></i><h3 id="totalRemaining">0</h3><p>Available</p></div></div></div><div class="text-end"><button id="resetPortfolioBtn" class="btn btn-outline-secondary btn-sm">Reset</button></div></div></section>
+
+<!-- Wishlist + Recently Viewed -->
+<section id="wishlist" class="container my-5">
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="wishlist-panel">
+        <div class="d-flex justify-content-between"><h2><i class="bi bi-heart-fill" style="color:var(--accent);"></i> Wishlist</h2><span class="badge-gold"><span id="wishlistCount">0</span></span></div>
+        <div class="bg-light p-3 rounded-4 my-3"><div class="row g-2"><div class="col-md-5"><input id="wishNameInput" class="form-control" placeholder="Name"></div><div class="col-md-4"><input id="wishLocationInput" class="form-control" placeholder="Location"></div><div class="col-md-3"><button id="addWishlistBtn" class="btn btn-accent w-100">Add</button></div></div></div>
+        <div id="wishlistContainer"></div>
+        <div class="mt-3 text-end"><button id="clearWishlistBtn" class="btn btn-outline-danger btn-sm">Clear</button></div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="recent-card">
+        <h5><i class="bi bi-clock-history" style="color:var(--accent);"></i> Recently Viewed</h5>
+        <div id="recentlyViewedList"></div>
+        <button id="clearRecentBtn" class="btn btn-sm btn-outline-secondary mt-2">Clear</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Contact Section -->
+<section id="contact" class="container my-5">
+  <h2 class="section-title"><i class="bi bi-telephone-fill me-2" style="color:var(--accent);"></i>Contact & Support</h2>
+  <div class="contact-card">
+    <div class="row g-4">
+      <div class="col-md-4 text-center"><i class="bi bi-telephone fs-1" style="color:var(--accent);"></i><h5 class="mt-2">Call us</h5><p class="fw-bold">+1 (800) 555‑0199</p><p>Mon–Sat, 9am–8pm</p></div>
+      <div class="col-md-4 text-center"><i class="bi bi-envelope fs-1" style="color:var(--accent);"></i><h5 class="mt-2">Email</h5><p class="fw-bold">hello@vistaprime.com</p><p>support@vistaprime.com</p></div>
+      <div class="col-md-4 text-center"><i class="bi bi-geo-alt fs-1" style="color:var(--accent);"></i><h5 class="mt-2">Head Office</h5><p>123 Luxury Lane, Beverly Hills, CA 90210</p></div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer py-4 text-center"><div class="container">© 2026 VistaPrime · Contact: +1 (800) 555‑0199 · hello@vistaprime.com</div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  (function(){
+    // ---------- DATA (add lat/lng for map) ----------
+    const propertyData = [
+      { id: 1, name: 'Lakeside Villa', location: 'Lake Tahoe', city: 'Lake Tahoe', price: 985000, marla: '10 Marla', beds: 4, baths: 3, area: '3200 sqft', year: 2018, image: 'https://images.pexels.com/photos/2587054/pexels-photo-2587054.jpeg?auto=compress&cs=tinysrgb&w=300', lat: 39.0968, lng: -120.0324 },
+      { id: 2, name: 'Urban Loft', location: 'Austin', city: 'Austin', price: 525000, marla: '5 Marla', beds: 2, baths: 2, area: '1450 sqft', year: 2020, image: 'https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=300', lat: 30.2672, lng: -97.7431 },
+      { id: 3, name: 'Coastal Retreat', location: 'Malibu', city: 'Malibu', price: 2350000, marla: '1 Kanal', beds: 5, baths: 4, area: '4800 sqft', year: 2015, image: 'https://images.pexels.com/photos/221506/pexels-photo-221506.jpeg?auto=compress&cs=tinysrgb&w=300', lat: 34.0259, lng: -118.7798 },
+      { id: 4, name: 'Mountain Cabin', location: 'Aspen', city: 'Aspen', price: 760000, marla: '10 Marla', beds: 3, baths: 2, area: '2100 sqft', year: 2012, image: 'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=300', lat: 39.1911, lng: -106.8175 },
+      { id: 5, name: 'Downtown Penthouse', location: 'Chicago', city: 'Chicago', price: 1480000, marla: '20 Marla', beds: 3, baths: 3, area: '2800 sqft', year: 2021, image: 'https://images.pexels.com/photos/271816/pexels-photo-271816.jpeg?auto=compress&cs=tinysrgb&w=300', lat: 41.8781, lng: -87.6298 },
+      { id: 6, name: 'Desert Oasis', location: 'Scottsdale', city: 'Scottsdale', price: 890000, marla: '10 Marla', beds: 4, baths: 3, area: '3000 sqft', year: 2019, image: 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=300', lat: 33.4942, lng: -111.9261 },
+      { id: 7, name: 'Historic Brownstone', location: 'Boston', city: 'Boston', price: 1125000, marla: '5 Marla', beds: 4, baths: 2, area: '2500 sqft', year: 1905, image: 'https://images.pexels.com/photos/280229/pexels-photo-280229.jpeg?auto=compress&cs=tinysrgb&w=300', lat: 42.3601, lng: -71.0589 },
+      { id: 8, name: 'Beach Bungalow', location: 'Miami', city: 'Miami', price: 630000, marla: '10 Marla', beds: 3, baths: 2, area: '1800 sqft', year: 2008, image: 'https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg?auto=compress&cs=tinysrgb&w=300', lat: 25.7617, lng: -80.1918 },
+      { id: 9, name: 'Golf Estate', location: 'Naples', city: 'Naples', price: 1750000, marla: '1 Kanal', beds: 5, baths: 5, area: '5200 sqft', year: 2017, image: 'https://images.pexels.com/photos/2581549/pexels-photo-2581549.jpeg?auto=compress&cs=tinysrgb&w=300', lat: 26.142, lng: -81.7948 },
+      { id: 10, name: 'Modern Farmhouse', location: 'Nashville', city: 'Nashville', price: 820000, marla: '20 Marla', beds: 4, baths: 3, area: '2900 sqft', year: 2022, image: 'https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg?auto=compress&cs=tinysrgb&w=300', lat: 36.1627, lng: -86.7816 },
+      { id: 11, name: 'Skyline Condo', location: 'Seattle', city: 'Seattle', price: 970000, marla: '10 Marla', beds: 2, baths: 2, area: '1600 sqft', year: 2019, image: 'https://images.pexels.com/photos/439391/pexels-photo-439391.jpeg?auto=compress&cs=tinysrgb&w=300', lat: 47.6062, lng: -122.3321 },
+      { id: 12, name: 'Vineyard Estate', location: 'Napa', city: 'Napa', price: 2100000, marla: '1 Kanal', beds: 4, baths: 4, area: '4500 sqft', year: 2014, image: 'https://images.pexels.com/photos/221024/pexels-photo-221024.jpeg?auto=compress&cs=tinysrgb&w=300', lat: 38.2975, lng: -122.2869 },
+      { id: 13, name: 'City View Loft', location: 'Denver', city: 'Denver', price: 685000, marla: '5 Marla', beds: 2, baths: 1, area: '1250 sqft', year: 2016, image: 'https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg?auto=compress&cs=tinysrgb&w=300', lat: 39.7392, lng: -104.9903 },
+      { id: 14, name: 'Lakefront Cottage', location: 'Traverse City', city: 'Traverse City', price: 545000, marla: '10 Marla', beds: 3, baths: 2, area: '1900 sqft', year: 2010, image: 'https://images.pexels.com/photos/1643389/pexels-photo-1643389.jpeg?auto=compress&cs=tinysrgb&w=300', lat: 44.7631, lng: -85.6206 },
+      { id: 15, name: 'Spanish Colonial', location: 'Santa Fe', city: 'Santa Fe', price: 1195000, marla: '20 Marla', beds: 4, baths: 3, area: '3100 sqft', year: 1925, image: 'https://images.pexels.com/photos/258112/pexels-photo-258112.jpeg?auto=compress&cs=tinysrgb&w=300', lat: 35.6869, lng: -105.9378 },
+      { id: 16, name: 'Luxury Townhome', location: 'Washington', city: 'Washington', price: 1350000, marla: '10 Marla', beds: 3, baths: 3, area: '2400 sqft', year: 2020, image: 'https://images.pexels.com/photos/323705/pexels-photo-323705.jpeg?auto=compress&cs=tinysrgb&w=300', lat: 38.9072, lng: -77.0369 }
+    ];
+
+    // Agents
+    const agents = [
+      { name: 'Sarah Johnson', phone: '(310) 555-1234', email: 'sarah@vistaprime.com', avatar: 'https://randomuser.me/api/portraits/women/68.jpg' },
+      { name: 'Michael Chen', phone: '(310) 555-5678', email: 'michael@vistaprime.com', avatar: 'https://randomuser.me/api/portraits/men/32.jpg' },
+      { name: 'Jessica Williams', phone: '(310) 555-9012', email: 'jessica@vistaprime.com', avatar: 'https://randomuser.me/api/portraits/women/45.jpg' }
+    ];
+
+    // State
+    let wishlist = [], portfolio = [], compareList = [], filteredData = [...propertyData], recentViews = [];
+    let currentUser = null;
+    let currentMaxPrice = 5000000;
+    let currentSort = 'default';
+    let mapInitialized = false;
+    let map;
+
+    // DOM
+    const grid = document.getElementById('propertyGrid');
+    const cityFilter = document.getElementById('cityFilter'), marlaFilter = document.getElementById('marlaFilter');
+    const priceRange = document.getElementById('priceRange'), priceValue = document.getElementById('priceValue');
+    const sortSelect = document.getElementById('sortSelect');
+    const visibleCount = document.getElementById('visibleCount'), compareCounter = document.getElementById('compareCounter');
+    const compareTableWrapper = document.getElementById('compareTableWrapper'), compareTableBody = document.getElementById('compareTableBody');
+    const wishlistContainer = document.getElementById('wishlistContainer'), wishlistCountSpan = document.getElementById('wishlistCount');
+    const totalOwned = document.getElementById('totalOwned'), totalSold = document.getElementById('totalSold'), totalRemaining = document.getElementById('totalRemaining');
+    const userArea = document.getElementById('userArea');
+    const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+    const propertyModal = new bootstrap.Modal(document.getElementById('propertyModal'));
+    const preapprovalModal = new bootstrap.Modal(document.getElementById('preapprovalModal'));
+
+    // Storage
+    function loadStore() {
+      portfolio = JSON.parse(localStorage.getItem('vistaPortfolio')) || [{propId:1,name:'Lakeside Villa',location:'Lake Tahoe',status:'owned'},{propId:4,name:'Mountain Cabin',location:'Aspen',status:'owned'},{propId:7,name:'Historic Brownstone',location:'Boston',status:'sold'}];
+      wishlist = JSON.parse(localStorage.getItem('vistaWishlist')) || [];
+      recentViews = JSON.parse(localStorage.getItem('vistaRecentViews')) || [];
+      currentUser = JSON.parse(localStorage.getItem('vistaUser')) || null;
+      savePortfolio(); saveWishlist(); saveRecentViews(); updateUserUI(); renderRecentViews();
+    }
+    function savePortfolio() { localStorage.setItem('vistaPortfolio', JSON.stringify(portfolio)); updatePortfolioStats(); }
+    function saveWishlist() { localStorage.setItem('vistaWishlist', JSON.stringify(wishlist)); }
+    function saveRecentViews() { localStorage.setItem('vistaRecentViews', JSON.stringify(recentViews.slice(0,5))); }
+    function saveUser() { localStorage.setItem('vistaUser', JSON.stringify(currentUser)); updateUserUI(); }
+
+    function addRecentView(property) {
+      recentViews = recentViews.filter(p => p.id !== property.id);
+      recentViews.unshift({ id: property.id, name: property.name, location: property.location });
+      if (recentViews.length > 5) recentViews.pop();
+      saveRecentViews();
+      renderRecentViews();
+    }
+    function renderRecentViews() {
+      const container = document.getElementById('recentlyViewedList');
+      if (!recentViews.length) { container.innerHTML = '<p class="text-muted small">No recent views</p>'; return; }
+      container.innerHTML = recentViews.map(r => `<div class="recent-item"><span><i class="bi bi-eye"></i> ${r.name} (${r.location})</span><button class="btn btn-sm btn-outline-danger del-recent" data-id="${r.id}">🗑️</button></div>`).join('');
+      document.querySelectorAll('.del-recent').forEach(btn => btn.addEventListener('click', (e) => {
+        const id = parseInt(btn.dataset.id);
+        recentViews = recentViews.filter(r => r.id !== id);
+        saveRecentViews(); renderRecentViews();
+      }));
+    }
+
+    function updateUserUI() {
+      if (currentUser) {
+        userArea.innerHTML = `<span class="user-badge"><i class="bi bi-person-check"></i> ${currentUser.name.split(' ')[0]}</span>
+          <button id="logoutBtn" class="btn btn-sm btn-outline-light ms-2">Logout</button>`;
+        document.getElementById('logoutBtn')?.addEventListener('click', ()=> { currentUser = null; saveUser(); });
+      } else {
+        userArea.innerHTML = `<button class="login-btn" id="showLoginBtn"><i class="bi bi-box-arrow-in-right"></i> Login</button>`;
+        document.getElementById('showLoginBtn')?.addEventListener('click', ()=> loginModal.show());
+      }
+    }
+
+    function populateFilters() {
+      const cities = [...new Set(propertyData.map(p => p.city))];
+      cityFilter.innerHTML = '<option value="all">All Cities</option>';
+      cities.forEach(c => cityFilter.innerHTML += `<option value="${c}">${c}</option>`);
+    }
+
+    function filterProperties() {
+      const city = cityFilter.value, marla = marlaFilter.value;
+      filteredData = propertyData.filter(p => (city==='all'||p.city===city) && (marla==='all'||p.marla===marla) && p.price <= currentMaxPrice);
+      if (currentSort === 'price_asc') filteredData.sort((a,b)=>a.price-b.price);
+      else if (currentSort === 'price_desc') filteredData.sort((a,b)=>b.price-a.price);
+      else if (currentSort === 'name_asc') filteredData.sort((a,b)=>a.name.localeCompare(b.name));
+      else filteredData.sort((a,b)=>a.id-b.id);
+      visibleCount.textContent = filteredData.length;
+      renderGrid();
+    }
+
+    function renderGrid() {
+      let html = '';
+      filteredData.forEach(p => {
+        const inPort = portfolio.find(i => i.propId === p.id);
+        const status = inPort ? (inPort.status==='sold'?'SOLD':'OWNED') : '';
+        const checked = compareList.includes(p.id) ? 'checked' : '';
+        html += `<div class="col-md-6 col-lg-3"><div class="property-card p-3" data-id="${p.id}"><img src="${p.image}" class="property-img w-100 rounded-3" onerror="this.src='https://placehold.co/300x180'"><div class="p-2"><div class="d-flex justify-content-between"><h5 class="fw-bold">${p.name}</h5><span class="badge-marla">${p.marla}</span></div><p><i class="bi bi-geo-alt-fill" style="color:var(--accent);"></i> ${p.location}</p><p class="fw-bold">$${p.price.toLocaleString()}</p><div class="d-flex flex-wrap gap-2"><button class="btn btn-outline-accent btn-sm add-wish" data-id="${p.id}" data-name="${p.name}" data-loc="${p.location}">❤️</button><button class="btn btn-outline-secondary btn-sm own-btn" data-id="${p.id}">Own</button><button class="btn btn-outline-success btn-sm sold-btn" data-id="${p.id}" ${!inPort||inPort.status==='sold'?'disabled':''}>Sold</button><div class="form-check"><input class="form-check-input compare-cb" type="checkbox" data-id="${p.id}" ${checked}> Compare</div></div>${status?`<span class="badge ${inPort.status==='sold'?'bg-secondary':'bg-success'} mt-2">${status}</span>`:''}</div></div></div>`;
+      });
+      grid.innerHTML = html || '<div class="col-12 text-center py-5">No properties match.</div>';
+      
+      document.querySelectorAll('.property-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('button, .form-check-input')) return;
+          const id = parseInt(card.dataset.id);
+          const prop = propertyData.find(p => p.id === id);
+          if (prop) showPropertyModal(prop);
+        });
+      });
+      document.querySelectorAll('.add-wish').forEach(b => b.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        addWishlistItem({name:b.dataset.name, location:b.dataset.loc, display:`${b.dataset.name} — ${b.dataset.loc}`});
+      }));
+      document.querySelectorAll('.own-btn').forEach(b => b.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const id = Number(b.dataset.id); const prop = propertyData.find(p=>p.id===id);
+        if(!portfolio.find(p=>p.propId===id)) { portfolio.push({propId:id, name:prop.name, location:prop.location, status:'owned'}); savePortfolio(); renderGrid(); }
+      }));
+      document.querySelectorAll('.sold-btn').forEach(b => b.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const id = Number(b.dataset.id); const item = portfolio.find(p=>p.propId===id && p.status==='owned');
+        if(item) { item.status='sold'; savePortfolio(); renderGrid(); }
+      }));
+      document.querySelectorAll('.compare-cb').forEach(cb => cb.addEventListener('change', (e)=>{
+        e.stopPropagation();
+        const id = Number(cb.dataset.id);
+        if(cb.checked) { if(!compareList.includes(id) && compareList.length<3) compareList.push(id); else { alert('Max 3'); cb.checked=false; return; } }
+        else compareList = compareList.filter(cid=>cid!==id);
+        updateCompareUI(); renderGrid();
+      }));
+    }
+
+    function showPropertyModal(property) {
+      addRecentView(property);
+      const agent = agents[property.id % agents.length];
+      const inPort = portfolio.find(i => i.propId === property.id);
+      const statusText = inPort ? (inPort.status === 'sold' ? 'Sold' : 'Owned') : 'Available';
+      document.getElementById('modalTitle').innerHTML = `${property.name} <span class="badge bg-secondary">${statusText}</span>`;
+      document.getElementById('modalBody').innerHTML = `
+        <div class="row">
+          <div class="col-md-6"><img src="${property.image}" class="img-fluid rounded-3" onerror="this.src='https://placehold.co/600x400'"></div>
+          <div class="col-md-6">
+            <p><i class="bi bi-geo-alt-fill"></i> <strong>${property.location}</strong></p>
+            <p><i class="bi bi-house-door"></i> ${property.marla} · ${property.beds} beds · ${property.baths} baths · ${property.area}</p>
+            <p><i class="bi bi-calendar"></i> Year built: ${property.year}</p>
+            <h4 class="text-accent">$${property.price.toLocaleString()}</h4>
+            <hr>
+            <div class="d-flex align-items-center gap-3"><img src="${agent.avatar}" class="agent-avatar"><div><strong>${agent.name}</strong><br><i class="bi bi-telephone"></i> ${agent.phone}<br><i class="bi bi-envelope"></i> ${agent.email}</div></div>
+            <hr>
+            <label>Inquiry / Message</label><textarea id="inquiryMsg" class="form-control" rows="2" placeholder="I'm interested in this property..."></textarea>
+            <button id="sendInquiryBtn" class="btn btn-accent mt-3 w-100" data-prop="${property.id}">Send Inquiry</button>
+          </div>
+        </div>
+      `;
+      document.getElementById('sendInquiryBtn')?.addEventListener('click', () => {
+        const msg = document.getElementById('inquiryMsg').value;
+        const inquiries = JSON.parse(localStorage.getItem('vistaInquiries') || '[]');
+        inquiries.push({ property: property.name, message: msg, date: new Date().toISOString(), user: currentUser?.email || 'guest' });
+        localStorage.setItem('vistaInquiries', JSON.stringify(inquiries));
+        alert('Inquiry sent! (saved to localStorage)');
+        propertyModal.hide();
+      });
+      propertyModal.show();
+    }
+
+    function updateCompareUI() { compareCounter.textContent = `${compareList.length} selected`; }
+    function updatePortfolioStats() {
+      const total = portfolio.length, sold = portfolio.filter(p=>p.status==='sold').length;
+      totalOwned.textContent = total; totalSold.textContent = sold; totalRemaining.textContent = total - sold;
+    }
+
+    function addWishlistItem(item) { wishlist.push({...item, id: Date.now()}); saveWishlist(); renderWishlist(); }
+    function renderWishlist() {
+      wishlistCountSpan.textContent = wishlist.length;
+      wishlistContainer.innerHTML = wishlist.length ? wishlist.map(i=>`<div class="wishlist-item"><span>${i.display}</span><button class="btn btn-sm btn-outline-danger del-wish" data-id="${i.id}">🗑️</button></div>`).join('') : '<p class="text-muted">✨ Add properties</p>';
+      document.querySelectorAll('.del-wish').forEach(b=>b.addEventListener('click',()=>{ wishlist = wishlist.filter(i=>i.id!=b.dataset.id); saveWishlist(); renderWishlist(); }));
+    }
+
+    function calculateMonthly(price, downPercent=20, years=5, rate=0.05, taxInsPercent=1.2) {
+      const loan = price * (1 - downPercent/100);
+      const monthlyRate = rate / 12, months = years * 12;
+      const principalPayment = (loan * monthlyRate) / (1 - Math.pow(1+monthlyRate, -months));
+      const monthlyTaxIns = (price * (taxInsPercent/100)) / 12;
+      return principalPayment + monthlyTaxIns;
+    }
+
+    function showAmortization(price, downPercent, years, rate=0.05, taxInsPercent=1.2) {
+      const loan = price * (1 - downPercent/100);
+      const monthlyRate = rate / 12;
+      const months = years * 12;
+      const monthlyPayment = (loan * monthlyRate) / (1 - Math.pow(1+monthlyRate, -months));
+      let balance = loan;
+      let tableHtml = '<table class="table table-sm table-bordered mt-2"><thead><tr><th>Month</th><th>Principal</th><th>Interest</th><th>Balance</th></tr></thead><tbody>';
+      for (let i = 1; i <= Math.min(12, months); i++) {
+        const interest = balance * monthlyRate;
+        const principal = monthlyPayment - interest;
+        balance -= principal;
+        tableHtml += `<tr><td>${i}</td><td>$${principal.toFixed(0)}</td><td>$${interest.toFixed(0)}</td><td>$${balance.toFixed(0)}</td></tr>`;
+      }
+      tableHtml += '</tbody></table><small class="text-muted">First 12 months shown</small>';
+      return tableHtml;
+    }
+
+    function showCompare() {
+      if(!compareList.length) return alert('Select properties');
+      const selected = propertyData.filter(p=>compareList.includes(p.id));
+      compareTableBody.innerHTML = selected.map(p => `<tr><td>${p.name}</td><td>${p.location}</td><td>${p.marla}</td><td>$${p.price.toLocaleString()}</td><td>$${calculateMonthly(p.price).toFixed(0)}</td></tr>`).join('');
+      compareTableWrapper.style.display = 'block';
+    }
+
+    // ---------- MORTGAGE PRE-APPROVAL (FIXED) ----------
+    document.getElementById('preapprovalHeroBtn')?.addEventListener('click', () => preapprovalModal.show());
+    document.getElementById('calcPreapprovalBtn')?.addEventListener('click', () => {
+      // Get values and parse as numbers
+      let annualIncome = parseFloat(document.getElementById('incomeInput').value);
+      let monthlyDebt = parseFloat(document.getElementById('debtInput').value);
+      let downPayment = parseFloat(document.getElementById('downPaymentInput').value);
+      
+      // Validate inputs
+      if (isNaN(annualIncome) || annualIncome <= 0) {
+        document.getElementById('preapprovalResult').innerHTML = '⚠️ Please enter a valid annual income (greater than 0).';
+        document.getElementById('preapprovalResult').style.display = 'block';
+        document.getElementById('preapprovalResult').className = 'alert alert-warning mt-3';
+        return;
+      }
+      if (isNaN(monthlyDebt)) monthlyDebt = 0;
+      if (isNaN(downPayment)) downPayment = 0;
+      
+      // Calculate max monthly payment (43% DTI rule)
+      const maxMonthlyPayment = (annualIncome / 12) * 0.43 - monthlyDebt;
+      
+      if (maxMonthlyPayment <= 0) {
+        document.getElementById('preapprovalResult').innerHTML = '❌ Based on your income and debts, you may not qualify for a mortgage at this time. Reduce your debts or increase income.';
+        document.getElementById('preapprovalResult').style.display = 'block';
+        document.getElementById('preapprovalResult').className = 'alert alert-danger mt-3';
+        return;
+      }
+      
+      // 30-year fixed at 5% interest
+      const rate = 0.05;
+      const months = 360;
+      const monthlyRate = rate / 12;
+      const maxLoan = maxMonthlyPayment * (1 - Math.pow(1 + monthlyRate, -months)) / monthlyRate;
+      const maxPrice = maxLoan + downPayment;
+      
+      if (maxPrice <= 0) {
+        document.getElementById('preapprovalResult').innerHTML = '❌ With your down payment, the maximum affordable price is $0. Try increasing your down payment.';
+        document.getElementById('preapprovalResult').style.display = 'block';
+        document.getElementById('preapprovalResult').className = 'alert alert-danger mt-3';
+        return;
+      }
+      
+      const downPercent = (downPayment / maxPrice) * 100;
+      document.getElementById('preapprovalResult').innerHTML = `✅ You could afford up to <strong>$${maxPrice.toLocaleString()}</strong><br>
+        <small>Based on ${downPercent.toFixed(1)}% down payment, 30-year fixed mortgage at 5% interest, and 43% debt-to-income ratio.</small>`;
+      document.getElementById('preapprovalResult').style.display = 'block';
+      document.getElementById('preapprovalResult').className = 'alert alert-success mt-3';
+    });
+
+    // ---------- INTERACTIVE MAP & NEARBY ----------
+    function initMap() {
+      if (mapInitialized) return;
+      map = L.map('map').setView([39.8283, -98.5795], 4);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CartoDB'
+      }).addTo(map);
+      propertyData.forEach(prop => {
+        const marker = L.marker([prop.lat, prop.lng]).addTo(map);
+        marker.bindPopup(`<b>${prop.name}</b><br>${prop.location}<br>$${prop.price.toLocaleString()}`);
+      });
+      mapInitialized = true;
+    }
+
+    document.getElementById('findNearbyBtn')?.addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        alert('Geolocation not supported');
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(pos => {
+        const userLat = pos.coords.latitude;
+        const userLng = pos.coords.longitude;
+        let nearest = null;
+        let minDist = Infinity;
+        propertyData.forEach(prop => {
+          const dist = Math.hypot(prop.lat - userLat, prop.lng - userLng);
+          if (dist < minDist) {
+            minDist = dist;
+            nearest = prop;
+          }
+        });
+        if (nearest) {
+          document.getElementById('nearbyResult').innerHTML = `📍 Nearest: ${nearest.name} (approx. ${(minDist * 111).toFixed(1)} km away)`;
+          map.setView([userLat, userLng], 10);
+          L.marker([userLat, userLng]).addTo(map).bindPopup('You are here').openPopup();
+        } else {
+          document.getElementById('nearbyResult').innerHTML = 'No properties found.';
+        }
+      }, () => {
+        alert('Unable to get your location');
+      });
+    });
+
+    // ---------- RENT VS BUY ----------
+    document.getElementById('rentVsBuyBtn')?.addEventListener('click', () => {
+      const rent = parseFloat(document.getElementById('rentAmount').value) || 0;
+      const price = parseFloat(document.getElementById('calcPrice').value) || 500000;
+      const downPercent = parseFloat(document.getElementById('calcDown').value) || 20;
+      const years = parseInt(document.getElementById('calcTerm').value) || 5;
+      const taxIns = parseFloat(document.getElementById('calcTaxInsurance').value) || 1.2;
+      const monthlyBuy = calculateMonthly(price, downPercent, years, 0.05, taxIns);
+      const resultDiv = document.getElementById('rentVsBuyResult');
+      if (rent <= 0) {
+        resultDiv.innerHTML = 'Enter a monthly rent amount to compare.';
+        resultDiv.className = 'alert alert-warning mt-2 mb-0 small';
+        return;
+      }
+      if (monthlyBuy < rent) {
+        const savings = rent - monthlyBuy;
+        resultDiv.innerHTML = `✅ Buying is cheaper by <strong>$${savings.toFixed(0)}/month</strong> than renting at $${rent}/month.`;
+        resultDiv.className = 'alert alert-success mt-2 mb-0 small';
+      } else {
+        const extra = monthlyBuy - rent;
+        resultDiv.innerHTML = `⚠️ Renting is cheaper by <strong>$${extra.toFixed(0)}/month</strong> than buying (monthly payment $${monthlyBuy.toFixed(0)}).`;
+        resultDiv.className = 'alert alert-danger mt-2 mb-0 small';
+      }
+    });
+
+    // Login / Signup simulation
+    document.getElementById('loginSubmit').addEventListener('click', ()=>{
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass = document.getElementById('loginPassword').value;
+      if (email === 'demo@vistaprime.com' && pass === 'demo123') {
+        currentUser = { name: 'Demo User', email };
+        saveUser(); loginModal.hide();
+      } else alert('Use demo@vistaprime.com / demo123');
+    });
+    document.getElementById('signupSubmit').addEventListener('click', ()=>{
+      const name = document.getElementById('signupName').value.trim();
+      const email = document.getElementById('signupEmail').value.trim();
+      if (name && email) { currentUser = { name, email }; saveUser(); loginModal.hide(); }
+      else alert('Fill all fields');
+    });
+
+    // Init
+    function init() {
+      populateFilters(); loadStore(); renderGrid(); renderWishlist(); updatePortfolioStats();
+      cityFilter.addEventListener('change', filterProperties);
+      marlaFilter.addEventListener('change', filterProperties);
+      priceRange.addEventListener('input', (e) => { currentMaxPrice = parseInt(e.target.value); priceValue.textContent = currentMaxPrice.toLocaleString(); filterProperties(); });
+      sortSelect.addEventListener('change', (e) => { currentSort = e.target.value; filterProperties(); });
+      document.getElementById('clearFiltersBtn').addEventListener('click', ()=>{ cityFilter.value='all'; marlaFilter.value='all'; priceRange.value='5000000'; priceValue.textContent='5,000,000'; currentMaxPrice=5000000; currentSort='default'; sortSelect.value='default'; filterProperties(); });
+      document.getElementById('calcBtn').addEventListener('click', ()=>{
+        const price = parseFloat(document.getElementById('calcPrice').value)||0, down = parseFloat(document.getElementById('calcDown').value)||20, years = parseInt(document.getElementById('calcTerm').value);
+        const taxIns = parseFloat(document.getElementById('calcTaxInsurance').value)||1.2;
+        const monthly = calculateMonthly(price, down, years, 0.05, taxIns);
+        document.getElementById('monthlyResult').textContent = `$${monthly.toFixed(0)}`;
+        const amortHtml = showAmortization(price, down, years, 0.05, taxIns);
+        const amortDiv = document.getElementById('amortizationTable');
+        amortDiv.innerHTML = amortHtml;
+        amortDiv.style.display = 'block';
+      });
+      document.getElementById('addWishlistBtn').addEventListener('click', ()=>{
+        const n = document.getElementById('wishNameInput').value.trim(), l = document.getElementById('wishLocationInput').value.trim();
+        if(n&&l) { addWishlistItem({name:n, location:l, display:`${n} — ${l}`}); document.getElementById('wishNameInput').value=document.getElementById('wishLocationInput').value=''; }
+      });
+      document.getElementById('clearWishlistBtn').addEventListener('click', ()=>{ if(confirm('Clear?')){ wishlist=[]; saveWishlist(); renderWishlist(); }});
+      document.getElementById('resetPortfolioBtn').addEventListener('click', ()=>{ portfolio=[{propId:1,name:'Lakeside Villa',location:'Lake Tahoe',status:'owned'},{propId:4,name:'Mountain Cabin',location:'Aspen',status:'owned'},{propId:7,name:'Historic Brownstone',location:'Boston',status:'sold'}]; savePortfolio(); renderGrid(); });
+      document.getElementById('compareBtn').addEventListener('click', showCompare);
+      document.getElementById('clearCompareBtn').addEventListener('click', ()=>{ compareList=[]; updateCompareUI(); renderGrid(); compareTableWrapper.style.display='none'; });
+      document.getElementById('clearRecentBtn').addEventListener('click', () => { recentViews = []; saveRecentViews(); renderRecentViews(); });
+      document.getElementById('darkModeToggle').addEventListener('click', ()=>{
+        document.body.classList.toggle('dark-mode');
+        localStorage.setItem('vistaDark', document.body.classList.contains('dark-mode'));
+        document.querySelector('#darkModeToggle').innerHTML = document.body.classList.contains('dark-mode') ? '<i class="bi bi-sun-fill"></i> Light' : '<i class="bi bi-moon-stars"></i> Dark';
+      });
+      if(localStorage.getItem('vistaDark')==='true') { document.body.classList.add('dark-mode'); document.querySelector('#darkModeToggle').innerHTML = '<i class="bi bi-sun-fill"></i> Light'; }
+      initMap();
+    }
+    init();
+  })();
+</script>
+</body>
+</html>
